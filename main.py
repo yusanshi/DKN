@@ -2,55 +2,29 @@ import os
 from model.dkn import DKN
 from torch.utils.data import DataLoader
 import torch
-import requests
-import zipfile
-import io
 import time
 import numpy as np
 from config import Config
 from dataset import DKNDataset
-from kg import train_kg, load_kg
+
+# setting device on GPU if available, else CPU
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print('Using device:', device)
+# TODO use cuda if possible
 
 # TODO some layers in F should be use nn.* instead
 # in order to be shown in model summary
 
 
 def main():
-    # TODO:cuda device = ? else
-
-    dataset_dir = './dataset'
-    # TODO change to final dataset
-    train_file = 'debug_train_with_entity.txt'
-    test_file = 'debug_test_with_entity.txt'
-    # Download dataset if not exists
-    if not (os.path.isfile(os.path.join(dataset_dir, train_file)) and os.path.isfile(os.path.join(dataset_dir, test_file))):
-        print(f'Dataset not found in {dataset_dir}, start downloading.')
-        dkn_dataset_url = 'https://yun.yusanshi.com/dkn_dataset.zip'
-        r = requests.get(dkn_dataset_url)
-        z = zipfile.ZipFile(io.BytesIO(r.content))
-        z.extractall(dataset_dir)
-        print(f'Dataset downloaded and extracted into {dataset_dir}')
-    else:
-        print(f'Dataset exists in {dataset_dir}, skip downloading.')
-
+    # TODO Fullfill train_dataset and test_dataset
     train_dataset = DKNDataset(
-        Config, os.path.join(dataset_dir, train_file))
+        Config)
     test_dataset = DKNDataset(
-        Config, os.path.join(dataset_dir, test_file))
+        Config)
     print(
         f"Load dataset with train size {len(train_dataset)} and test size {len(test_dataset)}."
     )
-
-    kg_dir = './kg'
-    kg_file = 'kg.json'  # TODO
-    if not (os.path.isfile(os.path.join(kg_dir, kg_file))):
-        print(f'Knowledge graph not found in {kg_dir}, start training.')
-        train_kg(os.path.join(kg_dir, kg_file), Config.entity_embedding_dim)
-        print(f'Knowledge graph trained and put into {kg_dir} for future use.')
-    else:
-        print(f'Knowledge graph exists in {kg_dir}, skip training.')
-
-    entity_embedding, _ = load_kg(os.path.join(kg_dir, kg_file))
 
     train_dataloader = iter(
         DataLoader(train_dataset,
@@ -59,7 +33,17 @@ def main():
                    num_workers=Config.num_workers,
                    drop_last=True))
 
-    dkn = DKN(Config, entity_embedding)
+    # TODO
+    embeddings = {
+        # num_words_a_sentence, word_embedding_dim
+        "word": 0,
+        # num_entity_tokens, entity_embedding_dim
+        "entity": 0,
+        # num_entity_tokens, entity_embedding_dim
+        "context": 0
+    }
+
+    dkn = DKN(Config, embeddings)
     print(dkn)
     # TODO
     criterion = torch.nn.MSELoss()

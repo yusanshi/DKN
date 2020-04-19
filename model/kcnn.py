@@ -9,12 +9,10 @@ class KCNN(torch.nn.Module):
     Input a news sentence (e.g. its title), produce its embedding vector.
     """
 
-    def __init__(self, config, entity_embedding):
+    def __init__(self, config, embeddings):
         super(KCNN, self).__init__()
         self.config = config
-        self.word_embedding = nn.Embedding(self.config.num_word_tokens,
-                                           self.config.word_embedding_dim)
-        self.entity_embedding = entity_embedding
+        self.embeddings = embeddings
         self.transform_matrix = nn.Parameter(
             torch.empty(self.config.entity_embedding_dim,
                         self.config.word_embedding_dim))
@@ -42,21 +40,15 @@ class KCNN(torch.nn.Module):
         Returns:
           batch_size * (len(window_sizes) * filter_out_channels)
         """
-        # batch_size, num_words_a_sentence
-        word = torch.stack(news["word"]).transpose(0, 1)
         # batch_size, num_words_a_sentence, word_embedding_dim
-        word_vector = self.word_embedding(word)
-        # batch_size, num_words_a_sentence
-        entity = torch.stack(news["entity"]).transpose(0, 1)  # 64, 10
+        word_vector = self.embeddings["word"](news["word"])
+        # batch_size, num_words_a_sentence, entity_embedding_dim
+        entity_vector = self.embeddings["entity"](news["entity"])
+        # batch_size, num_words_a_sentence, entity_embedding_dim
+        context_vector = self.embeddings["context"](news["entity"])
+
         # TODO ei and ei2 are set as zero if wi has no corresponding entity
 
-        # TODO
-        entity_vector = torch.rand(
-            self.config.batch_size, self.config.num_words_a_sentence,
-            self.config.entity_embedding_dim)  # 64, 10, 80
-        context_vector = torch.rand(
-            self.config.batch_size, self.config.num_words_a_sentence,
-            self.config.entity_embedding_dim)  # 64, 10, 80
         # batch_size, num_words_a_sentence, word_embedding_dim
         transformed_entity_vector = torch.tanh(
             torch.matmul(entity_vector, self.transform_matrix) +

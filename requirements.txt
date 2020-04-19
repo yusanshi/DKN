@@ -1,4 +1,4 @@
 torch
-requests
 numpy
-zipfile
+gensim
+pandas

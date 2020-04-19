@@ -34,7 +34,7 @@ class DKNDataset(Dataset):
                         "word": [1218, 7526, 2209, 7643, 2860, 1757, 4487, 0, 0, 0],
                         "entity":[0, 0, 311, 0, 0, 0, 0, 0, 0, 0]
                     },
-                    padded...
+                    padded to <num_clicked_news_a_user>
                 ]
             }
         ]

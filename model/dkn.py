@@ -9,10 +9,11 @@ class DKN(torch.nn.Module):
     Deep knowledge-aware network.
     Input a candidate news and a list of user clicked news, produce the click probability.
     """
-    def __init__(self, config):
+
+    def __init__(self, config, entity_embedding):
         super(DKN, self).__init__()
         self.config = config
-        self.kcnn = KCNN(config)
+        self.kcnn = KCNN(config, entity_embedding)
         self.attention = Attention(config)
         # TODO parameters
         self.dnn = nn.Sequential(
@@ -38,11 +39,11 @@ class DKN(torch.nn.Module):
         Returns:
           [probability] * batch_size
         """
-        # batch_size, (len(window_sizes) * filter_out_channels)
+        # batch_size, len(window_sizes) * filter_out_channels
         candidate_news_vector = self.kcnn(candidate_news)
-        # num_clicked_news_a_user, batch_size, (len(window_sizes) * filter_out_channels)
+        # num_clicked_news_a_user, batch_size, len(window_sizes) * filter_out_channels
         clicked_news_vector = torch.stack([self.kcnn(x) for x in clicked_news])
-        # batch_size, (len(window_sizes) * filter_out_channels)
+        # batch_size, len(window_sizes) * filter_out_channels
         user_vector = self.attention(candidate_news_vector,
                                      clicked_news_vector)
         # batch_size

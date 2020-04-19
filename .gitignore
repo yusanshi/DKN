@@ -1,1 +1,6 @@
-dataset/
+dataset/*
+!dataset/.gitkeep
+
+kg/*
+!kg/.gitkeep
+

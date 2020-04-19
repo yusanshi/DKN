@@ -1,7 +1,17 @@
-WORD_EMBEDDING_DIM = 100
-ENTITY_EMBEDDING_DIM = 100
-FILTERS_NUM = 100  # TODO
-WINDOW_SIZE_LIST = [1, 2, 3, 4]  # TODO
-EPOCH_NUM = 5000
-BATCH_SIZE = 64
-LEARNING_RATE = 0.00002
+class Config():
+    word_embedding_dim = 100
+    entity_embedding_dim = 80  # TODO adjust to 100
+    filter_out_channels = 120  # TODO adjust to 100
+    window_sizes = [1, 2, 3, 4]  # TODO
+    num_batches = 1000  # Batches count to train
+    num_batches_batch_loss = 20
+    num_batches_val_loss = 100
+    batch_size = 64
+    learning_rate = 0.00002
+    num_workers = 4  # Number of workers for data loading
+
+    # Determined by the dataset
+    num_word_tokens = 8033
+    num_entity_tokens = 3777
+    num_words_a_sentence = 10
+    num_clicked_news_a_user = 278

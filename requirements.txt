@@ -1,2 +1,4 @@
 torch
 requests
+numpy
+zipfile

@@ -2,6 +2,8 @@
 
 An implementation of [DKN](https://dl.acm.org/doi/abs/10.1145/3178876.3186175) (_Deep knowledge-aware network for news recommendation_) in PyTorch.
 
+**[WIP] I'm still debugging it.**
+
 ## Get started
 
 Basic setup.
@@ -57,5 +59,5 @@ python3 main.py
 
 ## Credits
 
-- News data, word, entity and context embeddings are from <https://github.com/hwwang55/DKN> (See `./thirdparty/hwwang55`).
+- News data, word, entity and context embeddings are from <https://github.com/hwwang55/DKN>.
 

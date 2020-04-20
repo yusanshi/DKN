@@ -9,16 +9,18 @@ class DKN(torch.nn.Module):
     Deep knowledge-aware network.
     Input a candidate news and a list of user clicked news, produce the click probability.
     """
+
     def __init__(self, config, embeddings):
         super(DKN, self).__init__()
         self.config = config
         self.kcnn = KCNN(config, embeddings)
-        self.attention = Attention(config)
+        if self.config.use_attention:
+            self.attention = Attention(config)
         # TODO parameters
         self.dnn = nn.Sequential(
             nn.Linear(
-                len(self.config.window_sizes) * 2 *
-                self.config.filter_out_channels, 32), nn.Linear(32, 1))
+                len(self.config.window_sizes) * 2 * self.config.num_filters,
+                16), nn.Linear(16, 1))
 
     def forward(self, candidate_news, clicked_news):
         """
@@ -38,13 +40,16 @@ class DKN(torch.nn.Module):
         Returns:
           [probability] * batch_size
         """
-        # batch_size, len(window_sizes) * filter_out_channels
+        # batch_size, len(window_sizes) * num_filters
         candidate_news_vector = self.kcnn(candidate_news)
-        # num_clicked_news_a_user, batch_size, len(window_sizes) * filter_out_channels
+        # num_clicked_news_a_user, batch_size, len(window_sizes) * num_filters
         clicked_news_vector = torch.stack([self.kcnn(x) for x in clicked_news])
-        # batch_size, len(window_sizes) * filter_out_channels
-        user_vector = self.attention(candidate_news_vector,
-                                     clicked_news_vector)
+        # batch_size, len(window_sizes) * num_filters
+        if self.config.use_attention:
+            user_vector = self.attention(candidate_news_vector,
+                                         clicked_news_vector)
+        else:
+            user_vector = clicked_news_vector.mean(dim=0)
         # batch_size
         click_probability = torch.sigmoid(
             self.dnn(torch.cat((user_vector, candidate_news_vector),

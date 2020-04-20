@@ -16,24 +16,27 @@ class Attention(torch.nn.Module):
         # TODO parameters
         self.dnn = nn.Sequential(
             nn.Linear(
-                len(self.config.window_sizes) * 2 *
-                self.config.filter_out_channels, 32), nn.Linear(32, 1))
+                len(self.config.window_sizes) * 2 * self.config.num_filters,
+                16), nn.Linear(16, 1))
 
     def forward(self, candidate_news_vector, clicked_news_vector):
         """
         Args:
-          candidate_news_vector: batch_size, len(window_sizes) * filter_out_channels
-          clicked_news_vector: num_clicked_news_a_user, batch_size, len(window_sizes) * filter_out_channels
+          candidate_news_vector: batch_size, len(window_sizes) * num_filters
+          clicked_news_vector: num_clicked_news_a_user, batch_size, len(window_sizes) * num_filters
         Returns:
-          batch_size, len(window_sizes) * filter_out_channels
+          batch_size, len(window_sizes) * num_filters
         """
         # batch_size, num_clicked_news_a_user
         clicked_news_weights = F.softmax(torch.stack([
             self.dnn(torch.cat(
                 (x, candidate_news_vector), dim=1)).squeeze(dim=1)
             for x in clicked_news_vector
-        ], dim=1), dim=1)
-        # batch_size, len(window_sizes) * filter_out_channels
+        ],
+            dim=1),
+            dim=1)
+        # print(clicked_news_weights.max(dim=1))
+        # batch_size, len(window_sizes) * num_filters
         user_vector = torch.bmm(clicked_news_weights.unsqueeze(1),
                                 clicked_news_vector.transpose(0, 1)).squeeze(1)
         return user_vector

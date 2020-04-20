@@ -2,13 +2,11 @@ import os
 from model.dkn import DKN
 from torch.utils.data import DataLoader
 import torch
+import torch.nn as nn
 import time
 import numpy as np
 from config import Config
 from dataset import DKNDataset
-
-# TODO some layers in F should be use nn.* instead
-# in order to be shown in model summary
 
 
 def main():
@@ -21,10 +19,12 @@ def main():
     )
 
     train_dataloader = iter(
-        DataLoader(train_dataset,
-                   batch_size=Config.batch_size,
-                   shuffle=True,
-                   num_workers=Config.num_workers))
+        DataLoader(
+            train_dataset,
+            batch_size=Config.batch_size,
+            shuffle=True,
+            num_workers=Config.num_workers,
+            drop_last=True))
 
     # Load trained embedding file
     embeddings = {
@@ -32,15 +32,15 @@ def main():
         "word": np.load(os.path.join('processed_data', 'word.npy')),
         # num_entity_tokens, entity_embedding_dim
         "entity": np.load(os.path.join('processed_data', 'entity.npy')),
-        # num_entity_tokens, context_embedding_dim
+        # num_entity_tokens, entity_embedding_dim
         "context": np.load(os.path.join('processed_data', 'context.npy'))
     }
 
     dkn = DKN(Config, embeddings).to(device)
     print(dkn)
-    # TODO
-    criterion = torch.nn.MSELoss()
-    optimizer = torch.optim.SGD(dkn.parameters(), lr=Config.learning_rate)
+
+    criterion = nn.BCELoss()
+    optimizer = torch.optim.Adadelta(dkn.parameters(), lr=Config.learning_rate)
     start_time = time.time()
     loss_full = []
     exhaustion_count = 0
@@ -76,7 +76,8 @@ def main():
                 DataLoader(train_dataset,
                            batch_size=Config.batch_size,
                            shuffle=True,
-                           num_workers=Config.num_workers))
+                           num_workers=Config.num_workers,
+                           drop_last=True))
 
 
 @torch.no_grad()
@@ -87,9 +88,10 @@ def check_loss(model, dataset):
     dataloader = DataLoader(dataset,
                             batch_size=Config.batch_size,
                             shuffle=True,
-                            num_workers=Config.num_workers)
-    # TODO
-    criterion = torch.nn.MSELoss()
+                            num_workers=Config.num_workers,
+                            drop_last=True)
+
+    criterion = nn.BCELoss()
     loss_full = []
     for minibatch in dataloader:
         y_pred = model(minibatch["candidatae_news"], minibatch["clicked_news"])

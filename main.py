@@ -24,8 +24,7 @@ def main():
         DataLoader(train_dataset,
                    batch_size=Config.batch_size,
                    shuffle=True,
-                   num_workers=Config.num_workers,
-                   drop_last=True))
+                   num_workers=Config.num_workers))
 
     # Load trained embedding file
     embeddings = {
@@ -33,7 +32,7 @@ def main():
         "word": np.load(os.path.join('processed_data', 'word.npy')),
         # num_entity_tokens, entity_embedding_dim
         "entity": np.load(os.path.join('processed_data', 'entity.npy')),
-        # num_entity_tokens, entity_embedding_dim
+        # num_entity_tokens, context_embedding_dim
         "context": np.load(os.path.join('processed_data', 'context.npy'))
     }
 
@@ -77,10 +76,10 @@ def main():
                 DataLoader(train_dataset,
                            batch_size=Config.batch_size,
                            shuffle=True,
-                           num_workers=Config.num_workers,
-                           drop_last=True))
+                           num_workers=Config.num_workers))
 
 
+@torch.no_grad()
 def check_loss(model, dataset):
     """
     Check average loss of trained model on given dataset.
@@ -88,12 +87,10 @@ def check_loss(model, dataset):
     dataloader = DataLoader(dataset,
                             batch_size=Config.batch_size,
                             shuffle=True,
-                            num_workers=Config.num_workers,
-                            drop_last=True)
+                            num_workers=Config.num_workers)
     # TODO
     criterion = torch.nn.MSELoss()
     loss_full = []
-    # TODO: not grad
     for minibatch in dataloader:
         y_pred = model(minibatch["candidatae_news"], minibatch["clicked_news"])
         y = minibatch["clicked"].float().to(device)

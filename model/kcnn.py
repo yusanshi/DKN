@@ -54,8 +54,6 @@ class KCNN(torch.nn.Module):
             torch.stack(news["entity"], dim=1),
             torch.from_numpy(self.embeddings["context"])).float().to(device)
 
-        # TODO ei and ei2 are set as zero if wi has no corresponding entity
-
         # batch_size, num_words_a_sentence, word_embedding_dim
         transformed_entity_vector = torch.tanh(
             torch.matmul(entity_vector, self.transform_matrix) +

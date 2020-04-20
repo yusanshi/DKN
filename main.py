@@ -7,21 +7,15 @@ import numpy as np
 from config import Config
 from dataset import DKNDataset
 
-# setting device on GPU if available, else CPU
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print('Using device:', device)
-# TODO use cuda if possible
-
 # TODO some layers in F should be use nn.* instead
 # in order to be shown in model summary
 
 
 def main():
-    # TODO Fullfill train_dataset and test_dataset
-    train_dataset = DKNDataset(
-        Config)
-    test_dataset = DKNDataset(
-        Config)
+    train_dataset = DKNDataset(Config,
+                               os.path.join('processed_data', 'train.txt'))
+    test_dataset = DKNDataset(Config, os.path.join('processed_data',
+                                                   'test.txt'))
     print(
         f"Load dataset with train size {len(train_dataset)} and test size {len(test_dataset)}."
     )
@@ -33,17 +27,17 @@ def main():
                    num_workers=Config.num_workers,
                    drop_last=True))
 
-    # TODO
+    # Load trained embedding file
     embeddings = {
-        # num_words_a_sentence, word_embedding_dim
-        "word": 0,
+        # num_word_tokens, word_embedding_dim
+        "word": np.load(os.path.join('processed_data', 'word.npy')),
         # num_entity_tokens, entity_embedding_dim
-        "entity": 0,
+        "entity": np.load(os.path.join('processed_data', 'entity.npy')),
         # num_entity_tokens, entity_embedding_dim
-        "context": 0
+        "context": np.load(os.path.join('processed_data', 'context.npy'))
     }
 
-    dkn = DKN(Config, embeddings)
+    dkn = DKN(Config, embeddings).to(device)
     print(dkn)
     # TODO
     criterion = torch.nn.MSELoss()
@@ -57,7 +51,7 @@ def main():
             minibatch = next(train_dataloader)
             y_pred = dkn(minibatch["candidatae_news"],
                          minibatch["clicked_news"])
-            y = minibatch["clicked"].float()
+            y = minibatch["clicked"].float().to(device)
             loss = criterion(y_pred, y)
             loss_full.append(loss.item())
             optimizer.zero_grad()
@@ -102,7 +96,7 @@ def check_loss(model, dataset):
     # TODO: not grad
     for minibatch in dataloader:
         y_pred = model(minibatch["candidatae_news"], minibatch["clicked_news"])
-        y = minibatch["clicked"].float()
+        y = minibatch["clicked"].float().to(device)
         loss = criterion(y_pred, y)
         loss_full.append(loss.item())
     return np.mean(loss_full)
@@ -118,4 +112,7 @@ def time_since(since):
 
 
 if __name__ == '__main__':
+    # setting device on GPU if available, else CPU
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print('Using device:', device)
     main()

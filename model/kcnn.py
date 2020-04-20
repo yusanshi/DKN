@@ -2,13 +2,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 
 class KCNN(torch.nn.Module):
     """
     Knowledge-aware CNN (KCNN) based on Kim CNN.
     Input a news sentence (e.g. its title), produce its embedding vector.
     """
-
     def __init__(self, config, embeddings):
         super(KCNN, self).__init__()
         self.config = config
@@ -41,11 +42,17 @@ class KCNN(torch.nn.Module):
           batch_size * (len(window_sizes) * filter_out_channels)
         """
         # batch_size, num_words_a_sentence, word_embedding_dim
-        word_vector = self.embeddings["word"](news["word"])
+        word_vector = F.embedding(
+            torch.stack(news["word"], dim=1),
+            torch.from_numpy(self.embeddings["word"])).float().to(device)
         # batch_size, num_words_a_sentence, entity_embedding_dim
-        entity_vector = self.embeddings["entity"](news["entity"])
-        # batch_size, num_words_a_sentence, entity_embedding_dim
-        context_vector = self.embeddings["context"](news["entity"])
+        entity_vector = F.embedding(
+            torch.stack(news["entity"], dim=1),
+            torch.from_numpy(self.embeddings["entity"])).float().to(device)
+        # batch_size, num_words_a_sentence, context_embedding_dim
+        context_vector = F.embedding(
+            torch.stack(news["entity"], dim=1),
+            torch.from_numpy(self.embeddings["context"])).float().to(device)
 
         # TODO ei and ei2 are set as zero if wi has no corresponding entity
 

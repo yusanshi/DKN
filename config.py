@@ -1,7 +1,5 @@
 class Config():
-    word_embedding_dim = 100
-    entity_embedding_dim = 80  # TODO adjust to 100
-    filter_out_channels = 120  # TODO adjust to 100
+    filter_out_channels = 60  # TODO
     window_sizes = [1, 2, 3, 4]  # TODO
     num_batches = 1000  # Number of batches to train
     num_batches_batch_loss = 20  # Number of batchs to show loss
@@ -10,9 +8,12 @@ class Config():
     learning_rate = 0.00002
     num_workers = 4  # Number of workers for data loading
 
-    # Determined by the dataset
-    # Don't modify it if you use my dataset
-    num_word_tokens = 8033
-    num_entity_tokens = 3777
+    num_clicked_news_a_user = 50  # Number of sampled click history for each user
+
+    # Determined by knowledge graph embedding training
+    # If you want to modify these, remember to also adjust parameters
+    # for your KG traning (Tips: in news_preprocess.py and kg_preprocess.py,
+    # See README.md for more details)
     num_words_a_sentence = 10
-    num_clicked_news_a_user = 278
+    word_embedding_dim = 50
+    entity_embedding_dim = 50

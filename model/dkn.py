@@ -9,7 +9,6 @@ class DKN(torch.nn.Module):
     Deep knowledge-aware network.
     Input a candidate news and a list of user clicked news, produce the click probability.
     """
-
     def __init__(self, config, embeddings):
         super(DKN, self).__init__()
         self.config = config

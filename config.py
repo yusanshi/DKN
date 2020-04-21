@@ -2,10 +2,11 @@ class Config():
     num_filters = 50
     window_sizes = [2, 3, 4]
     num_batches = 5000  # Number of batches to train
-    num_batches_batch_loss = 40  # Number of batchs to show loss
-    num_batches_val_loss = 500  # Number of batchs to check loss on test dataset
+    num_batches_batch_loss = 50  # Number of batchs to show loss
+    # Number of batchs to check loss and accuracy on test dataset
+    num_batches_val_loss_and_acc = 500
     batch_size = 64
-    learning_rate = 1.0
+    learning_rate = 0.001
     num_workers = 4  # Number of workers for data loading
     num_clicked_news_a_user = 50  # Number of sampled click history for each user
     # If False, user_vector will be the average value of clicked_news_vector

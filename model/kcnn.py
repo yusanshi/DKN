@@ -105,5 +105,4 @@ class KCNN(torch.nn.Module):
             pooled_vectors.append(pooled)
         # batch_size, len(window_sizes) * num_filters
         final_vector = torch.cat(pooled_vectors, dim=1)
-        # TODO dropout here?
         return final_vector

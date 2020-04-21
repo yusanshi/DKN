@@ -27,14 +27,15 @@ class Attention(torch.nn.Module):
         Returns:
           batch_size, len(window_sizes) * num_filters
         """
+        # num_clicked_news_a_user, batch_size, len(window_sizes) * num_filters
+        candidate_expanded = candidate_news_vector.expand(
+            self.config.num_clicked_news_a_user, -1, -1)
         # batch_size, num_clicked_news_a_user
-        clicked_news_weights = F.softmax(torch.stack([
-            self.dnn(torch.cat(
-                (x, candidate_news_vector), dim=1)).squeeze(dim=1)
-            for x in clicked_news_vector
-        ],
-            dim=1),
+        clicked_news_weights = F.softmax(self.dnn(
+            torch.cat((clicked_news_vector, candidate_expanded),
+                      dim=-1)).squeeze(-1).transpose(0, 1),
             dim=1)
+
         # print(clicked_news_weights.max(dim=1))
         # batch_size, len(window_sizes) * num_filters
         user_vector = torch.bmm(clicked_news_weights.unsqueeze(1),

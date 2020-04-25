@@ -47,9 +47,9 @@ You can visualize the result with TensorBoard.
 tensorboard --logdir=runs
 ```
 
-Train loss comparasion.
+Training loss.
 
-**TODO**
+![](https://img.yusanshi.com/upload/20200426073533535510.svg)
 
 Example output.
 

@@ -11,9 +11,8 @@ from dataset import DKNDataset
 
 
 def main():
-    comment = f"Context: {Config.use_context}, Attention: {Config.use_attention}"
-    print(comment)
-    writer = SummaryWriter(comment=comment)
+    print(f"Context: {Config.use_context}, Attention: {Config.use_attention}")
+    writer = SummaryWriter(comment=f"Context-{Config.use_context}_Attention-{Config.use_attention}")
     dataset = DKNDataset(Config, os.path.join('data', 'news', 'news.txt'))
     train_size = int(Config.train_split * len(dataset))
     test_size = len(dataset) - train_size

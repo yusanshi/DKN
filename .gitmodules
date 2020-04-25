@@ -1,0 +1,4 @@
+[submodule "thirdparty/OpenKE"]
+	path = thirdparty/OpenKE
+	url = https://github.com/thunlp/OpenKE
+	branch = OpenKE-PyTorch

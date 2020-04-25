@@ -10,10 +10,10 @@ class DKN(torch.nn.Module):
     Input a candidate news and a list of user clicked news, produce the click probability.
     """
 
-    def __init__(self, config, embeddings):
+    def __init__(self, config, entity_embedding, context_embedding):
         super(DKN, self).__init__()
         self.config = config
-        self.kcnn = KCNN(config, embeddings)
+        self.kcnn = KCNN(config, entity_embedding, context_embedding)
         if self.config.use_attention:
             self.attention = Attention(config)
         # TODO parameters

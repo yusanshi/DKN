@@ -1,6 +1,6 @@
 import os
 from model.dkn import DKN
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 import torch
 import torch.nn as nn
 import time
@@ -10,10 +10,12 @@ from dataset import DKNDataset
 
 
 def main():
-    train_dataset = DKNDataset(Config,
-                               os.path.join('processed_data', 'train.txt'))
-    test_dataset = DKNDataset(Config, os.path.join('processed_data',
-                                                   'test.txt'))
+    dataset = DKNDataset(Config,
+                         os.path.join('data', 'news', 'news.txt'))
+    train_size = int(Config.train_split * len(dataset))
+    test_size = len(dataset) - train_size
+    train_dataset, test_dataset = random_split(
+        dataset, (train_size, test_size))
     print(
         f"Load dataset with train size {len(train_dataset)} and test size {len(test_dataset)}."
     )
@@ -27,23 +29,18 @@ def main():
             drop_last=True))
 
     # Load trained embedding file
-    embeddings = {
-        # num_word_tokens, word_embedding_dim
-        "word": np.load(os.path.join('processed_data', 'word.npy')),
-        # num_entity_tokens, entity_embedding_dim
-        "entity": np.load(os.path.join('processed_data', 'entity.npy')),
-        # num_entity_tokens, entity_embedding_dim
-        "context": np.load(os.path.join('processed_data', 'context.npy'))
-    }
+    # num_entity_tokens, entity_embedding_dim
+    entity_embedding = np.load(os.path.join('data', 'kg', 'entity.npy'))
+    context_embedding = np.load(os.path.join('data', 'kg', 'context.npy'))
 
-    dkn = DKN(Config, embeddings).to(device)
+    dkn = DKN(Config, entity_embedding, context_embedding).to(device)
     print(dkn)
 
     val_loss, val_acc = check_loss_and_acc(dkn, test_dataset)
     print(
         f"Initial result on test dataset, validation loss: {val_loss:.6f}, validation accuracy: {val_acc:.6f}"
     )
-    
+
     criterion = nn.BCELoss()
     optimizer = torch.optim.Adam(dkn.parameters(), lr=Config.learning_rate)
     start_time = time.time()
@@ -84,6 +81,19 @@ def main():
                            shuffle=True,
                            num_workers=Config.num_workers,
                            drop_last=True))
+
+    val_loss, val_acc = check_loss_and_acc(dkn, test_dataset)
+    print(
+        f"Final result on test dataset, validation loss: {val_loss:.6f}, validation accuracy: {val_acc:.6f}"
+    )
+    val_loss, val_acc = check_loss_and_acc(dkn, train_dataset)
+    print(
+        f"Final result on train dataset, validation loss: {val_loss:.6f}, validation accuracy: {val_acc:.6f}"
+    )
+    val_loss, val_acc = check_loss_and_acc(dkn, dataset)
+    print(
+        f"Final result on full dataset, validation loss: {val_loss:.6f}, validation accuracy: {val_acc:.6f}"
+    )
 
 
 @torch.no_grad()

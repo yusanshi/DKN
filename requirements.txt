@@ -1,4 +1,6 @@
 torch
 numpy
-gensim
+tqdm
 pandas
+sklearn
+fire

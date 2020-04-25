@@ -7,6 +7,7 @@ class Config():
     num_batches_val_loss_and_acc = 500
     batch_size = 64
     learning_rate = 0.001
+    train_split = 0.7
     num_workers = 4  # Number of workers for data loading
     num_clicked_news_a_user = 50  # Number of sampled click history for each user
     # If False, user_vector will be the average value of clicked_news_vector
@@ -14,10 +15,9 @@ class Config():
     # If False, only word embedding and entity embedding will be used
     use_context = True
 
-    # Determined by knowledge graph embedding training
-    # If you want to modify these, remember to also adjust parameters
-    # for your KG traning (Tips: in news_preprocess.py and kg_preprocess.py,
-    # See README.md for more details)
     num_words_a_sentence = 10
+    num_word_tokens = 1 + 7947  # Don't modify this only if you use another dataset
+    word_freq_threshold = 2
+    entity_freq_threshold = 1
     word_embedding_dim = 50
     entity_embedding_dim = 50

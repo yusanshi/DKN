@@ -4,3 +4,4 @@ tqdm
 pandas
 sklearn
 fire
+tensorboard

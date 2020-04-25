@@ -14,8 +14,8 @@ class KCNN(torch.nn.Module):
     def __init__(self, config, entity_embedding, context_embedding):
         super(KCNN, self).__init__()
         self.config = config
-        self.word_embedding = nn.Embedding(
-            config.num_word_tokens, config.word_embedding_dim)
+        self.word_embedding = nn.Embedding(config.num_word_tokens,
+                                           config.word_embedding_dim)
         self.entity_embedding = entity_embedding
         self.context_embedding = context_embedding
         self.transform_matrix = nn.Parameter(
@@ -57,8 +57,7 @@ class KCNN(torch.nn.Module):
             # batch_size, num_words_a_sentence, entity_embedding_dim
             context_vector = F.embedding(
                 torch.stack(news["entity"], dim=1),
-                torch.from_numpy(
-                    self.context_embedding)).float().to(device)
+                torch.from_numpy(self.context_embedding)).float().to(device)
 
         # The abbreviations are the same as those in paper
         b = self.config.batch_size

@@ -1,6 +1,7 @@
 import os
 from model.dkn import DKN
 from torch.utils.data import DataLoader, random_split
+from torch.utils.tensorboard import SummaryWriter
 import torch
 import torch.nn as nn
 import time
@@ -10,23 +11,24 @@ from dataset import DKNDataset
 
 
 def main():
-    dataset = DKNDataset(Config,
-                         os.path.join('data', 'news', 'news.txt'))
+    comment = f"Context: {Config.use_context}, Attention: {Config.use_attention}"
+    print(comment)
+    writer = SummaryWriter(comment=comment)
+    dataset = DKNDataset(Config, os.path.join('data', 'news', 'news.txt'))
     train_size = int(Config.train_split * len(dataset))
     test_size = len(dataset) - train_size
-    train_dataset, test_dataset = random_split(
-        dataset, (train_size, test_size))
+    train_dataset, test_dataset = random_split(dataset,
+                                               (train_size, test_size))
     print(
         f"Load dataset with train size {len(train_dataset)} and test size {len(test_dataset)}."
     )
 
     train_dataloader = iter(
-        DataLoader(
-            train_dataset,
-            batch_size=Config.batch_size,
-            shuffle=True,
-            num_workers=Config.num_workers,
-            drop_last=True))
+        DataLoader(train_dataset,
+                   batch_size=Config.batch_size,
+                   shuffle=True,
+                   num_workers=Config.num_workers,
+                   drop_last=True))
 
     # Load trained embedding file
     # num_entity_tokens, entity_embedding_dim
@@ -37,6 +39,8 @@ def main():
     print(dkn)
 
     val_loss, val_acc = check_loss_and_acc(dkn, test_dataset)
+    writer.add_scalar('Loss/test', val_loss, 1)
+    writer.add_scalar('Accuracy/test', val_acc, 1)
     print(
         f"Initial result on test dataset, validation loss: {val_loss:.6f}, validation accuracy: {val_acc:.6f}"
     )
@@ -59,6 +63,8 @@ def main():
             loss.backward()
             optimizer.step()
 
+            writer.add_scalar('Loss/train', loss.item(), i)
+
             if i % Config.num_batches_batch_loss == 0:
                 print(
                     f"Time {time_since(start_time)}, batches {i}, current loss {loss.item():.6f}, average loss: {np.mean(loss_full):.6f}"
@@ -66,6 +72,8 @@ def main():
 
             if i % Config.num_batches_val_loss_and_acc == 0:
                 val_loss, val_acc = check_loss_and_acc(dkn, test_dataset)
+                writer.add_scalar('Loss/test', val_loss, i)
+                writer.add_scalar('Accuracy/test', val_acc, i)
                 print(
                     f"Time {time_since(start_time)}, batches {i}, validation loss: {val_loss:.6f}, validation accuracy: {val_acc:.6f}"
                 )
@@ -83,6 +91,8 @@ def main():
                            drop_last=True))
 
     val_loss, val_acc = check_loss_and_acc(dkn, test_dataset)
+    writer.add_scalar('Loss/test', val_loss, Config.num_batches)
+    writer.add_scalar('Accuracy/test', val_acc, Config.num_batches)
     print(
         f"Final result on test dataset, validation loss: {val_loss:.6f}, validation accuracy: {val_acc:.6f}"
     )
@@ -94,6 +104,7 @@ def main():
     print(
         f"Final result on full dataset, validation loss: {val_loss:.6f}, validation accuracy: {val_acc:.6f}"
     )
+    writer.close()
 
 
 @torch.no_grad()

@@ -35,12 +35,27 @@ Run.
 
 ```bash
 python3 main.py
+
+# or use `run.sh` to compare the result with or without context embedding, attention mechanism.
+
+chmod +x run.sh
+./run.sh
 ```
+
+You can visualize the result with TensorBoard.
+```bash
+tensorboard --logdir=runs
+```
+
+Train loss comparasion.
+
+**TODO**
 
 Example output.
 
 ```
 Using device: cuda:0
+Context: True, Attention: True
 Cached value for data/news/news.txt found in ./cache/6eaf15e083812ce71fdabccf7e1ea7e9b6d85a0a90c7e464e5528fd3d41b44fe, load it directly.
 Load dataset with train size 7494 and test size 3212.
 DKN(
@@ -86,9 +101,7 @@ Time 00:04:30, batches 650, current loss 0.261221, average loss: 0.501985
 Time 00:04:49, batches 700, current loss 0.355073, average loss: 0.487202
 Training data exhausted for 6 times after 708 batches, reuse the dataset.
 ```
-## Results
-
 
 ## Credits
-- Knowledge embedding training by [OpenKE](https://github.com/thunlp/OpenKE)
+- Knowledge embedding training by [OpenKE](https://github.com/thunlp/OpenKE).
 - Dataset based on <https://github.com/hwwang55/DKN/tree/0a84abba033cd1a873daaa90c8fd6878e5875e64/data>.

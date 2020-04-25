@@ -139,17 +139,18 @@ if __name__ == '__main__':
     writer.close()
 
     print('saving triple2name')
-    triple2name_writer = open(
-        './data/sub_kg/triple2name.txt', 'w', encoding='utf-8')
-    triple2id_writer = open(
-        './data/sub_kg/triple2id.txt', 'w', encoding='utf-8')
+    triple2name_writer = open('./data/sub_kg/triple2name.txt',
+                              'w',
+                              encoding='utf-8')
+    triple2id_writer = open('./data/sub_kg/triple2id.txt',
+                            'w',
+                            encoding='utf-8')
     triple = pd.read_table('data/kg/train2id.txt', skiprows=[0], header=None)
     for x in triple.itertuples(index=False):
         if x[0] in entity2name and x[1] in entity2name:
-            triple2name_writer.write('%s\t%s\t%d\n' %
-                                     (entity2name[x[0]], entity2name[x[1]], x[2]))
-            triple2id_writer.write('%d\t%d\t%d\n' %
-                                   (x[0], x[1], x[2]))
+            triple2name_writer.write(
+                '%s\t%s\t%d\n' % (entity2name[x[0]], entity2name[x[1]], x[2]))
+            triple2id_writer.write('%d\t%d\t%d\n' % (x[0], x[1], x[2]))
 
     triple2name_writer.close()
     triple2id_writer.close()

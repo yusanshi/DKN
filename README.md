@@ -19,6 +19,10 @@ Download the dataset and train knowledge embedding yourself.
 wget -O - https://yusanshi.com/dkn_data.tgz | tar -xjvf -
 # Preprocess data
 python3 data_preprocess.py
+
+export OPENKE=thirdparty/OpenKE/openke
+mkdir $OPENKE/release
+g++ $OPENKE/base/Base.cpp -fPIC -shared -o $OPENKE/release/Base.so -pthread -O3 -march=native
 # Train the knowledge graph embedding
 python3 knowledge_graph.py train
 # Generate embedding files from trained model (transe.ckpt)

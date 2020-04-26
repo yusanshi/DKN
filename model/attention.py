@@ -25,7 +25,7 @@ class Attention(torch.nn.Module):
           candidate_news_vector: batch_size, len(window_sizes) * num_filters
           clicked_news_vector: num_clicked_news_a_user, batch_size, len(window_sizes) * num_filters
         Returns:
-          batch_size, len(window_sizes) * num_filters
+          user_vector: batch_size, len(window_sizes) * num_filters
         """
         # num_clicked_news_a_user, batch_size, len(window_sizes) * num_filters
         candidate_expanded = candidate_news_vector.expand(

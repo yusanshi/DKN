@@ -38,7 +38,7 @@ class DKN(torch.nn.Module):
                 } * num_clicked_news_a_user
             ]
         Returns:
-          [probability] * batch_size
+          click_probability: batch_size
         """
         # batch_size, len(window_sizes) * num_filters
         candidate_news_vector = self.kcnn(candidate_news)

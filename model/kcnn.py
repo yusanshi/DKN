@@ -44,7 +44,7 @@ class KCNN(torch.nn.Module):
             }
 
         Returns:
-          batch_size * (len(window_sizes) * num_filters)
+          final_vector: batch_size, len(window_sizes) * num_filters
         """
         # batch_size, num_words_a_sentence, word_embedding_dim
         word_vector = self.word_embedding(

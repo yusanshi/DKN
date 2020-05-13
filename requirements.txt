@@ -1,7 +1,4 @@
 torch
 numpy
-tqdm
 pandas
-sklearn
-fire
 tensorboard

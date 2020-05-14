@@ -25,16 +25,16 @@ class DKN(torch.nn.Module):
     def forward(self, candidate_news, clicked_news):
         """
         Args:
-          candidata_news:
+          candidate_news:
             {
-                "word": [Tensor(batch_size) * num_words_a_sentence],
-                "entity":[Tensor(batch_size) * num_words_a_sentence]
+                "word": [Tensor(batch_size) * num_words_a_news],
+                "entity":[Tensor(batch_size) * num_words_a_news]
             }
           clicked_news:
             [
                 {
-                    "word": [Tensor(batch_size) * num_words_a_sentence],
-                    "entity":[Tensor(batch_size) * num_words_a_sentence]
+                    "word": [Tensor(batch_size) * num_words_a_news],
+                    "entity":[Tensor(batch_size) * num_words_a_news]
                 } * num_clicked_news_a_user
             ]
         Returns:

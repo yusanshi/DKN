@@ -39,33 +39,33 @@ class KCNN(torch.nn.Module):
         Args:
           news:
             {
-                "word": [Tensor(batch_size) * num_words_a_sentence],
-                "entity":[Tensor(batch_size) * num_words_a_sentence]
+                "word": [Tensor(batch_size) * num_words_a_news],
+                "entity":[Tensor(batch_size) * num_words_a_news]
             }
 
         Returns:
           final_vector: batch_size, len(window_sizes) * num_filters
         """
-        # batch_size, num_words_a_sentence, word_embedding_dim
+        # batch_size, num_words_a_news, word_embedding_dim
         word_vector = self.word_embedding(
             torch.stack(news["word"], dim=1).to(device))
-        # batch_size, num_words_a_sentence, entity_embedding_dim
+        # batch_size, num_words_a_news, entity_embedding_dim
         entity_vector = F.embedding(
             torch.stack(news["entity"], dim=1),
             torch.from_numpy(self.entity_embedding)).float().to(device)
         if self.config.use_context:
-            # batch_size, num_words_a_sentence, entity_embedding_dim
+            # batch_size, num_words_a_news, entity_embedding_dim
             context_vector = F.embedding(
                 torch.stack(news["entity"], dim=1),
                 torch.from_numpy(self.context_embedding)).float().to(device)
 
         # The abbreviations are the same as those in paper
         b = self.config.batch_size
-        n = self.config.num_words_a_sentence
+        n = self.config.num_words_a_news
         d = self.config.word_embedding_dim
         k = self.config.entity_embedding_dim
 
-        # batch_size, num_words_a_sentence, word_embedding_dim
+        # batch_size, num_words_a_news, word_embedding_dim
         transformed_entity_vector = torch.tanh(
             torch.add(
                 torch.bmm(self.transform_matrix.expand(b * n, -1, -1),
@@ -73,7 +73,7 @@ class KCNN(torch.nn.Module):
                 self.transform_bias.expand(b, n, -1)))
 
         if self.config.use_context:
-            # batch_size, num_words_a_sentence, word_embedding_dim
+            # batch_size, num_words_a_news, word_embedding_dim
             transformed_context_vector = torch.tanh(
                 torch.add(
                     torch.bmm(self.transform_matrix.expand(b * n, -1, -1),
@@ -81,23 +81,23 @@ class KCNN(torch.nn.Module):
                     self.transform_bias.expand(b, n, -1)))
 
         if self.config.use_context:
-            # batch_size, 3, num_words_a_sentence, word_embedding_dim
+            # batch_size, 3, num_words_a_news, word_embedding_dim
             multi_channel_vector = torch.stack([
                 word_vector, transformed_entity_vector,
                 transformed_context_vector
             ],
                 dim=1)
         else:
-            # batch_size, 2, num_words_a_sentence, word_embedding_dim
+            # batch_size, 2, num_words_a_news, word_embedding_dim
             multi_channel_vector = torch.stack(
                 [word_vector, transformed_entity_vector], dim=1)
 
         pooled_vectors = []
         for x in self.config.window_sizes:
-            # batch_size, num_filters, num_words_a_sentence + 1 - x
+            # batch_size, num_filters, num_words_a_news + 1 - x
             convoluted = self.conv_filters[str(x)](
                 multi_channel_vector).squeeze(dim=3)
-            # batch_size, num_filters, num_words_a_sentence + 1 - x
+            # batch_size, num_filters, num_words_a_news + 1 - x
             activated = F.relu(convoluted)
             # batch_size, num_filters
             pooled = activated.max(dim=-1)[0]

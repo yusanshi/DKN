@@ -1,19 +1,32 @@
-import os
 from model.dkn import DKN
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, Dataset, random_split
 from torch.utils.tensorboard import SummaryWriter
 import torch
 import torch.nn as nn
 import time
 import numpy as np
+import pickle
 from config import Config
-from dataset import DKNDataset
+
+
+class DKNDataset(Dataset):
+    def __init__(self, filepath):
+        super(Dataset, self).__init__()
+        with open(filepath, 'rb') as f:
+            self.data = pickle.load(f)
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        return self.data[idx]
 
 
 def main():
     print(f"Context: {Config.use_context}, Attention: {Config.use_attention}")
-    writer = SummaryWriter(comment=f"Context-{Config.use_context}_Attention-{Config.use_attention}")
-    dataset = DKNDataset(Config, os.path.join('data', 'news', 'news.txt'))
+    writer = SummaryWriter(
+        comment=f"Context-{Config.use_context}_Attention-{Config.use_attention}")
+    dataset = DKNDataset('data/merged/train.pkl')
     train_size = int(Config.train_split * len(dataset))
     test_size = len(dataset) - train_size
     train_dataset, test_dataset = random_split(dataset,
@@ -31,8 +44,8 @@ def main():
 
     # Load trained embedding file
     # num_entity_tokens, entity_embedding_dim
-    entity_embedding = np.load(os.path.join('data', 'kg', 'entity.npy'))
-    context_embedding = np.load(os.path.join('data', 'kg', 'context.npy'))
+    entity_embedding = np.load('data/merged/entity_embedding.npy')
+    context_embedding = np.load('data/merged/entity_embedding.npy')  # TODO
 
     dkn = DKN(Config, entity_embedding, context_embedding).to(device)
     print(dkn)
@@ -53,7 +66,7 @@ def main():
     for i in range(1, Config.num_batches + 1):
         try:
             minibatch = next(train_dataloader)
-            y_pred = dkn(minibatch["candidatae_news"],
+            y_pred = dkn(minibatch["candidate_news"],
                          minibatch["clicked_news"])
             y = minibatch["clicked"].float().to(device)
             loss = criterion(y_pred, y)
@@ -122,7 +135,7 @@ def check_loss_and_acc(model, dataset):
     total = 0
     correct = 0
     for minibatch in dataloader:
-        y_pred = model(minibatch["candidatae_news"], minibatch["clicked_news"])
+        y_pred = model(minibatch["candidate_news"], minibatch["clicked_news"])
         y = minibatch["clicked"].float().to(device)
         loss = criterion(y_pred, y)
         loss_full.append(loss.item())

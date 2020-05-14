@@ -1,6 +1,6 @@
 # DKN
 
-An implementation of [DKN](https://dl.acm.org/doi/abs/10.1145/3178876.3186175) (*Deep Knowledge-Aware Network for News Recommendation*) in PyTorch.
+An implementation of [DKN](https://dl.acm.org/doi/abs/10.1145/3178876.3186175) (_Deep Knowledge-Aware Network for News Recommendation_) in PyTorch.
 
 ## Get started
 
@@ -12,8 +12,8 @@ cd DKN
 pip3 install -r requirements.txt
 ```
 
-
 Download the dataset.
+
 ```bash
 mkdir data && cd data
 
@@ -24,7 +24,13 @@ unzip MINDsmall_train.zip -d train
 unzip MINDsmall_dev.zip -d validate
 rm MINDsmall_*.zip
 
-# Preprocess data
+# Merge train and validate dataset (currently the dataset is small so we do so to enlarge it, you can also only use train dataset by skipping this step and modifying `base_dir` from './data/merged' to './data/train' in data_preprocess.py)
+mkdir merged
+sort -u train/behaviors.tsv validate/behaviors.tsv > merged/behaviors.tsv
+sort -u train/news.tsv validate/news.tsv > merged/news.tsv
+sort -u train/entity_embedding.vec validate/entity_embedding.vec > merged/entity_embedding.vec
+
+# Preprocess data in `merged` into appropriate format
 python3 data_preprocess.py
 cd ..
 ```
@@ -41,13 +47,12 @@ chmod +x run.sh
 ```
 
 You can visualize the result with TensorBoard.
+
 ```bash
 tensorboard --logdir=runs
 ```
 
 Training loss.
-
-
 
 Example output.
 
@@ -56,4 +61,5 @@ Example output.
 ```
 
 ## Credits
+
 - Dataset by **MI**crosoft **N**ews **D**ataset (MIND).

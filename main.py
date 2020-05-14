@@ -1,32 +1,21 @@
 from model.dkn import DKN
-from torch.utils.data import DataLoader, Dataset, random_split
+from torch.utils.data import DataLoader, random_split
 from torch.utils.tensorboard import SummaryWriter
 import torch
 import torch.nn as nn
 import time
 import numpy as np
-import pickle
 from config import Config
-
-
-class DKNDataset(Dataset):
-    def __init__(self, filepath):
-        super(Dataset, self).__init__()
-        with open(filepath, 'rb') as f:
-            self.data = pickle.load(f)
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, idx):
-        return self.data[idx]
+from dataset import DKNDataset
 
 
 def main():
     print(f"Context: {Config.use_context}, Attention: {Config.use_attention}")
     writer = SummaryWriter(
-        comment=f"Context-{Config.use_context}_Attention-{Config.use_attention}")
-    dataset = DKNDataset('data/merged/train.pkl')
+        comment=f"Context-{Config.use_context}_Attention-{Config.use_attention}"
+    )
+    dataset = DKNDataset('data/merged/behaviors_cleaned.tsv',
+                         'data/merged/news_with_entity.tsv')
     train_size = int(Config.train_split * len(dataset))
     test_size = len(dataset) - train_size
     train_dataset, test_dataset = random_split(dataset,

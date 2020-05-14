@@ -11,13 +11,15 @@ class Config():
     batch_size = 64
     learning_rate = 0.001
     train_split = 0.8
-    num_workers = 1  # Number of workers for data loading
+    num_workers = 4  # Number of workers for data loading
     num_clicked_news_a_user = 50  # Number of sampled click history for each user
     # TODO current context embedding is not available
     # If False, only word embedding and entity embedding will be used
-    use_context = os.environ['CONTEXT'] == '1' if 'CONTEXT' in os.environ else False
+    use_context = os.environ[
+        'CONTEXT'] == '1' if 'CONTEXT' in os.environ else False
     # If False, user_vector will be the average value of clicked_news_vector
-    use_attention = os.environ['ATTENTION'] == '1' if 'ATTENTION' in os.environ else True
+    use_attention = os.environ[
+        'ATTENTION'] == '1' if 'ATTENTION' in os.environ else True
 
     num_words_a_news = 20
     entity_confidence_threshold = 0.5

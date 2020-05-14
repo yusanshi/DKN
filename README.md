@@ -24,7 +24,7 @@ unzip MINDsmall_train.zip -d train
 unzip MINDsmall_dev.zip -d validate
 rm MINDsmall_*.zip
 
-# Merge train and validate dataset (currently the dataset is small so we do so to enlarge it, you can also only use train dataset by skipping this step and modifying `base_dir` from './data/merged' to './data/train' in data_preprocess.py)
+# Merge train and validate dataset (currently the dataset is small so we do so to enlarge it)
 mkdir merged
 sort -u train/behaviors.tsv validate/behaviors.tsv > merged/behaviors.tsv
 sort -u train/news.tsv validate/news.tsv > merged/news.tsv

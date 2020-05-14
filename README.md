@@ -31,8 +31,8 @@ sort -u train/news.tsv validate/news.tsv > merged/news.tsv
 sort -u train/entity_embedding.vec validate/entity_embedding.vec > merged/entity_embedding.vec
 
 # Preprocess data in `merged` into appropriate format
-python3 src/data_preprocess.py
 cd ..
+python3 src/data_preprocess.py
 ```
 
 Run.

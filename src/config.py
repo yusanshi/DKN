@@ -5,9 +5,9 @@ class Config():
     num_filters = 50
     window_sizes = [2, 3, 4]
     num_batches = 5000  # Number of batches to train
-    num_batches_batch_loss = 50  # Number of batchs to show loss
+    num_batches_batch_loss = 100  # Number of batchs to show loss
     # Number of batchs to check loss and accuracy on test dataset
-    num_batches_val_loss_and_acc = 100
+    num_batches_val_loss_and_acc = 2000
     batch_size = 64
     learning_rate = 0.001
     train_split = 0.8

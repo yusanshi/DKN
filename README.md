@@ -31,14 +31,14 @@ sort -u train/news.tsv validate/news.tsv > merged/news.tsv
 sort -u train/entity_embedding.vec validate/entity_embedding.vec > merged/entity_embedding.vec
 
 # Preprocess data in `merged` into appropriate format
-python3 data_preprocess.py
+python3 src/data_preprocess.py
 cd ..
 ```
 
 Run.
 
 ```bash
-python3 main.py
+python3 src/main.py
 
 # or use `run.sh` to compare the result with or without context embedding, attention mechanism.
 
@@ -62,4 +62,4 @@ Example output.
 
 ## Credits
 
-- Dataset by **MI**crosoft **N**ews **D**ataset (MIND).
+- Dataset by **MI**crosoft **N**ews **D**ataset (MIND), see <https://msnews.github.io/>.

@@ -39,13 +39,6 @@ def main():
     dkn = DKN(Config, entity_embedding, context_embedding).to(device)
     print(dkn)
 
-    val_loss, val_acc = check_loss_and_acc(dkn, test_dataset)
-    writer.add_scalar('Loss/test', val_loss, 1)
-    writer.add_scalar('Accuracy/test', val_acc, 1)
-    print(
-        f"Initial result on test dataset, validation loss: {val_loss:.6f}, validation accuracy: {val_acc:.6f}"
-    )
-
     criterion = nn.BCELoss()
     optimizer = torch.optim.Adam(dkn.parameters(), lr=Config.learning_rate)
     start_time = time.time()

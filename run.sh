@@ -6,7 +6,7 @@ do
     do
         for ATTENTION in 0 1
         do
-            CONTEXT=$CONTEXT ATTENTION=$ATTENTION python3 main.py
+            CONTEXT=$CONTEXT ATTENTION=$ATTENTION python3 src/main.py
         done
     done
 done

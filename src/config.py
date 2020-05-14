@@ -5,15 +5,15 @@ class Config():
     num_filters = 50
     window_sizes = [2, 3, 4]
     num_batches = 5000  # Number of batches to train
-    num_batches_batch_loss = 100  # Number of batchs to show loss
+    num_batches_batch_loss = 50  # Number of batchs to show loss
     # Number of batchs to check loss and accuracy on test dataset
-    num_batches_val_loss_and_acc = 2000
-    batch_size = 64
+    num_batches_val_loss_and_acc = 300
+    batch_size = 256
     learning_rate = 0.001
     train_split = 0.8
     num_workers = 4  # Number of workers for data loading
     num_clicked_news_a_user = 50  # Number of sampled click history for each user
-    # TODO current context embedding is not available
+    # TODO currently context embedding is not available
     # If False, only word embedding and entity embedding will be used
     use_context = os.environ[
         'CONTEXT'] == '1' if 'CONTEXT' in os.environ else False

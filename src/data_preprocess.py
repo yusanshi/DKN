@@ -49,6 +49,35 @@ def clean(behaviors_source, behaviors_target, news_source, news_target):
     news.to_csv(news_target, sep='\t', index=False)
 
 
+def balance(source, target, true_false_division_range):
+    """
+    Args:
+        source: file path of original behaviors tsv file
+        target: file path of balanced behaviors tsv file
+        true_false_division_range: (low, high), len(true_part) / len(false_part) will be within the range
+    """
+    low = true_false_division_range[0]
+    high = true_false_division_range[1]
+    assert low <= high
+    original = pd.read_table(source)
+    true_part = original[original['clicked'] == 1]
+    false_part = original[original['clicked'] == 0]
+    if len(true_part) / len(false_part) < low:
+        print(
+            f'Drop {len(false_part) - int(len(true_part) / low)} from false part'
+        )
+        false_part = false_part.sample(n=int(len(true_part) / low))
+    elif len(true_part) / len(false_part) > high:
+        print(
+            f'Drop {len(true_part) - int(len(false_part) * high)} from true part'
+        )
+        true_part = true_part.sample(n=int(len(false_part) * high))
+
+    balanced = pd.concat([true_part,
+                          false_part]).sample(frac=1).reset_index(drop=True)
+    balanced.to_csv(target, sep='\t', index=False)
+
+
 def parse_news(source, target, word2int_path, entity2int_path):
     """
     Args:
@@ -150,8 +179,8 @@ def transform_entity_embedding(source, target, entity2int_path):
         entity2int_path
     """
     entity_embedding = pd.read_table(source, header=None)
-    entity_embedding['vector'] = entity_embedding.iloc[:, 1:101].values.tolist(
-    )
+    entity_embedding['vector'] = entity_embedding.iloc[:,
+                                                       1:101].values.tolist()
     entity_embedding = entity_embedding[[0, 'vector'
                                          ]].rename(columns={0: "entity"})
 
@@ -175,6 +204,10 @@ if __name__ == '__main__':
           path.join(base_dir, 'behaviors_cleaned.tsv'),
           path.join(base_dir, 'news.tsv'),
           path.join(base_dir, 'news_cleaned.tsv'))
+
+    print('\nBalance data')
+    balance(path.join(base_dir, 'behaviors_cleaned.tsv'),
+            path.join(base_dir, 'behaviors_cleaned_balanced.tsv'), (1 / 2, 2))
 
     print('\nParse news')
     parse_news(path.join(base_dir, 'news_cleaned.tsv'),

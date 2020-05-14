@@ -7,6 +7,7 @@ import time
 import numpy as np
 from config import Config
 from dataset import DKNDataset
+from tqdm import tqdm
 
 
 def main():
@@ -14,7 +15,7 @@ def main():
     writer = SummaryWriter(
         comment=f"Context-{Config.use_context}_Attention-{Config.use_attention}"
     )
-    dataset = DKNDataset('data/merged/behaviors_cleaned.tsv',
+    dataset = DKNDataset('data/merged/behaviors_cleaned_balanced.tsv',
                          'data/merged/news_with_entity.tsv')
     train_size = int(Config.train_split * len(dataset))
     test_size = len(dataset) - train_size
@@ -39,15 +40,36 @@ def main():
     dkn = DKN(Config, entity_embedding, context_embedding).to(device)
     print(dkn)
 
+    val_loss, val_acc = check_loss_and_acc(dkn, test_dataset)
+    writer.add_scalar('Loss/test', val_loss, 1)
+    writer.add_scalar('Accuracy/test', val_acc, 1)
+    print(
+        f"Initial result on test dataset, validation loss: {val_loss:.6f}, validation accuracy: {val_acc:.6f}"
+    )
+
     criterion = nn.BCELoss()
     optimizer = torch.optim.Adam(dkn.parameters(), lr=Config.learning_rate)
     start_time = time.time()
     loss_full = []
     exhaustion_count = 0
 
-    for i in range(1, Config.num_batches + 1):
-        try:
-            minibatch = next(train_dataloader)
+    with tqdm(total=Config.num_batches, desc="Training") as pbar:
+        for i in range(1, Config.num_batches + 1):
+            try:
+                minibatch = next(train_dataloader)
+            except StopIteration:
+                exhaustion_count += 1
+                tqdm.write(
+                    f"Training data exhausted for {exhaustion_count} times after {i} batches, reuse the dataset."
+                )
+                train_dataloader = iter(
+                    DataLoader(train_dataset,
+                               batch_size=Config.batch_size,
+                               shuffle=True,
+                               num_workers=Config.num_workers,
+                               drop_last=True))
+                minibatch = next(train_dataloader)
+
             y_pred = dkn(minibatch["candidate_news"],
                          minibatch["clicked_news"])
             y = minibatch["clicked"].float().to(device)
@@ -60,7 +82,7 @@ def main():
             writer.add_scalar('Loss/train', loss.item(), i)
 
             if i % Config.num_batches_batch_loss == 0:
-                print(
+                tqdm.write(
                     f"Time {time_since(start_time)}, batches {i}, current loss {loss.item():.6f}, average loss: {np.mean(loss_full):.6f}"
                 )
 
@@ -68,21 +90,11 @@ def main():
                 val_loss, val_acc = check_loss_and_acc(dkn, test_dataset)
                 writer.add_scalar('Loss/test', val_loss, i)
                 writer.add_scalar('Accuracy/test', val_acc, i)
-                print(
+                tqdm.write(
                     f"Time {time_since(start_time)}, batches {i}, validation loss: {val_loss:.6f}, validation accuracy: {val_acc:.6f}"
                 )
 
-        except StopIteration:
-            exhaustion_count += 1
-            print(
-                f"Training data exhausted for {exhaustion_count} times after {i} batches, reuse the dataset."
-            )
-            train_dataloader = iter(
-                DataLoader(train_dataset,
-                           batch_size=Config.batch_size,
-                           shuffle=True,
-                           num_workers=Config.num_workers,
-                           drop_last=True))
+            pbar.update(1)
 
     val_loss, val_acc = check_loss_and_acc(dkn, test_dataset)
     writer.add_scalar('Loss/test', val_loss, Config.num_batches)
@@ -116,15 +128,26 @@ def check_loss_and_acc(model, dataset):
     loss_full = []
     total = 0
     correct = 0
-    for minibatch in dataloader:
-        y_pred = model(minibatch["candidate_news"], minibatch["clicked_news"])
-        y = minibatch["clicked"].float().to(device)
-        loss = criterion(y_pred, y)
-        loss_full.append(loss.item())
-        y_pred_np = y_pred.cpu().numpy() > 0.5
-        y_np = y.cpu().numpy() > 0.5
-        total += y_pred_np.shape[0]
-        correct += sum(y_pred_np == y_np)
+    count = 0
+    # TODO why not just iterate on all data instead of 100?
+    max_count = min(len(dataloader), 100)
+    with tqdm(total=max_count, desc="Checking loss and accuracy") as pbar:
+        for minibatch in dataloader:
+            y_pred = model(minibatch["candidate_news"],
+                           minibatch["clicked_news"])
+            y = minibatch["clicked"].float().to(device)
+            loss = criterion(y_pred, y)
+            loss_full.append(loss.item())
+            y_pred_np = y_pred.cpu().numpy() > 0.5
+            y_np = y.cpu().numpy() > 0.5
+            total += y_pred_np.shape[0]
+            correct += sum(y_pred_np == y_np)
+
+            pbar.update(1)
+
+            count += 1
+            if count == max_count:
+                break
 
     return np.mean(loss_full), correct / total
 

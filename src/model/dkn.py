@@ -50,8 +50,8 @@ class DKN(torch.nn.Module):
                                          clicked_news_vector)
         else:
             user_vector = clicked_news_vector.mean(dim=0)
+        # Sigmoid is done with BCEWithLogitsLoss
         # batch_size
-        click_probability = torch.sigmoid(
-            self.dnn(torch.cat((user_vector, candidate_news_vector),
-                               dim=1)).squeeze(dim=1))
+        click_probability = self.dnn(torch.cat((user_vector, candidate_news_vector),
+                                               dim=1)).squeeze(dim=1)
         return click_probability

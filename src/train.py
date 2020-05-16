@@ -35,7 +35,7 @@ def train():
     if not os.path.exists('checkpoint'):
         os.makedirs('checkpoint')
 
-    dataset = DKNDataset('data/train/behaviors_cleaned_balanced.tsv',
+    dataset = DKNDataset('data/train/behaviors_cleaned.tsv',
                          'data/train/news_with_entity.tsv')
     train_size = int(Config.train_validation_split[0] /
                      sum(Config.train_validation_split) * len(dataset))
@@ -61,7 +61,9 @@ def train():
     dkn = DKN(Config, entity_embedding, context_embedding).to(device)
     print(dkn)
 
-    criterion = nn.BCELoss()
+    # TODO magic number 23.7
+    criterion = nn.BCEWithLogitsLoss(
+        pos_weight=torch.tensor([23.7]).float().to(device))
     optimizer = torch.optim.Adam(dkn.parameters(), lr=Config.learning_rate)
     start_time = time.time()
     loss_full = []
@@ -165,7 +167,8 @@ def validate(model, dataset):
                             num_workers=Config.num_workers,
                             drop_last=True)
 
-    criterion = nn.BCELoss()
+    criterion = nn.BCEWithLogitsLoss(
+        pos_weight=torch.tensor([23.7]).float().to(device))
     loss_full = []
     aucs = []
     mrrs = []

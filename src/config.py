@@ -31,7 +31,7 @@ class Config():
     entity_freq_threshold = 3
 
     # Modify this by the output of `src/dataprocess.py`
-    num_word_tokens = 1 + 14758
+    num_word_tokens = 1 + 14760
     # Modify the following only if you use another dataset
     word_embedding_dim = 100
     entity_embedding_dim = 100

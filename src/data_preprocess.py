@@ -1,12 +1,14 @@
 from config import Config
 import pandas as pd
-from os import path
 import json
 from tqdm import tqdm
 import numpy as np
+from os import path
+import re
 
 
-def clean(behaviors_source, behaviors_target, news_source, news_target):
+def clean_dataset(behaviors_source, behaviors_target, news_source,
+                  news_target):
     """
     Remove unnecessary information in MIND dataset
     Args:
@@ -35,7 +37,7 @@ def clean(behaviors_source, behaviors_target, news_source, news_target):
     behaviors = behaviors.explode('impressions').reset_index(drop=True)
     behaviors['candidate_news'], behaviors[
         'clicked'] = behaviors.impressions.str.split('-').str
-    behaviors.dropna(inplace=True)
+    behaviors.clicked_news.fillna('', inplace=True)
     behaviors.to_csv(behaviors_target,
                      sep='\t',
                      index=False,
@@ -78,7 +80,7 @@ def balance(source, target, true_false_division_range):
     balanced.to_csv(target, sep='\t', index=False)
 
 
-def parse_news(source, target, word2int_path, entity2int_path):
+def parse_news(source, target, word2int_path, entity2int_path, mode):
     """
     Args:
         source: path of tsv file as input
@@ -91,82 +93,138 @@ def parse_news(source, target, word2int_path, entity2int_path):
                 id	title	entities
                 N1	[1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]	[0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
-        word2int_path
-        entity2int_path
+        if mode == 'train':
+            word2int_path: where to load
+            entity2int_path: where to load
+        elif mode == 'test':
+            word2int_path: where to load
+            entity2int_path: where to load
     """
-    word2int = {}
-    word2freq = {}
-    entity2int = {}
-    entity2freq = {}
+    def clean_text(text):
+        return re.sub(r'[^a-zA-Z ]', '', text).lower().strip()
 
-    news = pd.read_table(source)
-    news.dropna(inplace=True)
-    parsed_news = pd.DataFrame(columns=['id', 'title', 'entities'])
+    if mode == 'train':
+        word2int = {}
+        word2freq = {}
+        entity2int = {}
+        entity2freq = {}
 
-    with tqdm(total=len(news), desc="Counting words and entities") as pbar:
-        for row in news.itertuples(index=False):
-            for w in row.title.lower().split():
-                if w not in word2freq:
-                    word2freq[w] = 1
-                else:
-                    word2freq[w] += 1
-            for e in json.loads(row.entities):
-                # Count occurrence time within title
-                times = len(
-                    list(
-                        filter(lambda x: x < len(row.title),
-                               e['OccurrenceOffsets']))) * e['Confidence']
-                if times > 0:
-                    if e['WikidataId'] not in entity2freq:
-                        entity2freq[e['WikidataId']] = times
+        news = pd.read_table(source)
+        news.entities.fillna('[]', inplace=True)
+        parsed_news = pd.DataFrame(columns=['id', 'title', 'entities'])
+
+        with tqdm(total=len(news), desc="Counting words and entities") as pbar:
+            for row in news.itertuples(index=False):
+                for w in clean_text(row.title).split():
+                    if w not in word2freq:
+                        word2freq[w] = 1
                     else:
-                        entity2freq[e['WikidataId']] += times
-            pbar.update(1)
+                        word2freq[w] += 1
+                for e in json.loads(row.entities):
+                    # Count occurrence time within title
+                    times = len(
+                        list(
+                            filter(lambda x: x < len(row.title),
+                                   e['OccurrenceOffsets']))) * e['Confidence']
+                    if times > 0:
+                        if e['WikidataId'] not in entity2freq:
+                            entity2freq[e['WikidataId']] = times
+                        else:
+                            entity2freq[e['WikidataId']] += times
+                pbar.update(1)
 
-    for k, v in word2freq.items():
-        if v >= Config.word_freq_threshold:
-            word2int[k] = len(word2int) + 1
+        for k, v in word2freq.items():
+            if v >= Config.word_freq_threshold:
+                word2int[k] = len(word2int) + 1
 
-    for k, v in entity2freq.items():
-        if v >= Config.entity_freq_threshold:
-            entity2int[k] = len(entity2int) + 1
+        for k, v in entity2freq.items():
+            if v >= Config.entity_freq_threshold:
+                entity2int[k] = len(entity2int) + 1
 
-    with tqdm(total=len(news), desc="Parsing words and entities") as pbar:
-        for row in news.itertuples(index=False):
-            new_row = [
-                row.id, [0] * Config.num_words_a_news,
-                [0] * Config.num_words_a_news
-            ]
+        with tqdm(total=len(news), desc="Parsing words and entities") as pbar:
+            for row in news.itertuples(index=False):
+                new_row = [
+                    row.id, [0] * Config.num_words_a_news,
+                    [0] * Config.num_words_a_news
+                ]
 
-            # Calculate local entity map (map lower single word to entity)
-            local_entity_map = {}
-            for e in json.loads(row.entities):
-                if e['Confidence'] > Config.entity_confidence_threshold and e[
-                        'WikidataId'] in entity2int:
-                    for x in ' '.join(e['SurfaceForms']).lower().split():
-                        local_entity_map[x] = entity2int[e['WikidataId']]
-            try:
-                for i, w in enumerate(row.title.lower().split()):
-                    if w in word2int:
-                        new_row[1][i] = word2int[w]
-                        if w in local_entity_map:
-                            new_row[2][i] = local_entity_map[w]
-            except IndexError:
-                pass
+                # Calculate local entity map (map lower single word to entity)
+                local_entity_map = {}
+                for e in json.loads(row.entities):
+                    if e['Confidence'] > Config.entity_confidence_threshold and e[
+                            'WikidataId'] in entity2int:
+                        for x in ' '.join(e['SurfaceForms']).lower().split():
+                            local_entity_map[x] = entity2int[e['WikidataId']]
+                try:
+                    for i, w in enumerate(clean_text(row.title).split()):
+                        if w in word2int:
+                            new_row[1][i] = word2int[w]
+                            if w in local_entity_map:
+                                new_row[2][i] = local_entity_map[w]
+                except IndexError:
+                    pass
 
-            parsed_news.loc[len(parsed_news)] = new_row
+                parsed_news.loc[len(parsed_news)] = new_row
 
-            pbar.update(1)
+                pbar.update(1)
 
-    parsed_news.to_csv(target, sep='\t', index=False)
-    pd.DataFrame(word2int.items(), columns=['word',
-                                            'int']).to_csv(word2int_path,
-                                                           sep='\t',
-                                                           index=False)
-    pd.DataFrame(entity2int.items(), columns=['entity',
-                                              'int']).to_csv(entity2int_path,
-                                                             sep='\t',
-                                                             index=False)
+        parsed_news.to_csv(target, sep='\t', index=False)
+        pd.DataFrame(word2int.items(), columns=['word',
+                                                'int']).to_csv(word2int_path,
+                                                               sep='\t',
+                                                               index=False)
+        print(
+            f'Please modify `num_word_tokens` in `src/config.py` into 1 + {len(word2int)}'
+        )
+        pd.DataFrame(entity2int.items(),
+                     columns=['entity', 'int']).to_csv(entity2int_path,
+                                                       sep='\t',
+                                                       index=False)
+    elif mode == 'test':
+        news = pd.read_table(source)
+        news.entities.fillna('[]', inplace=True)
+        parsed_news = pd.DataFrame(columns=['id', 'title', 'entities'])
+
+        word2int = dict(pd.read_table(word2int_path).values.tolist())
+        entity2int = dict(pd.read_table(entity2int_path).values.tolist())
+
+        word_total = 0
+        word_missed = 0
+
+        with tqdm(total=len(news), desc="Parsing words and entities") as pbar:
+            for row in news.itertuples(index=False):
+                new_row = [
+                    row.id, [0] * Config.num_words_a_news,
+                    [0] * Config.num_words_a_news
+                ]
+
+                # Calculate local entity map (map lower single word to entity)
+                local_entity_map = {}
+                for e in json.loads(row.entities):
+                    if e['Confidence'] > Config.entity_confidence_threshold and e[
+                            'WikidataId'] in entity2int:
+                        for x in ' '.join(e['SurfaceForms']).lower().split():
+                            local_entity_map[x] = entity2int[e['WikidataId']]
+                try:
+                    for i, w in enumerate(clean_text(row.title).split()):
+                        word_total += 1
+                        if w in word2int:
+                            new_row[1][i] = word2int[w]
+                            if w in local_entity_map:
+                                new_row[2][i] = local_entity_map[w]
+                        else:
+                            word_missed += 1
+                except IndexError:
+                    pass
+
+                parsed_news.loc[len(parsed_news)] = new_row
+
+                pbar.update(1)
+        print(f'Out-of-Vocabulary rate: {word_missed/word_total:.4f}')
+        parsed_news.to_csv(target, sep='\t', index=False)
+
+    else:
+        print('Wrong mode!')
 
 
 def transform_entity_embedding(source, target, entity2int_path):
@@ -196,26 +254,78 @@ def transform_entity_embedding(source, target, entity2int_path):
     np.save(target, entity_embedding_transformed)
 
 
+def transform2json(source, target):
+    """
+    Transform bahaviors file in tsv to json for later evaluation
+    Args:
+        TODO
+        source:
+        target:
+    """
+    behaviors = pd.read_table(
+        source,
+        header=None,
+        names=['uid', 'time', 'clicked_news', 'impression'])
+    f = open(target, "w")
+    with tqdm(total=len(behaviors), desc="Transforming tsv to json") as pbar:
+        for row in behaviors.itertuples(index=False):
+            item = {}
+            item['uid'] = row.uid[1:]
+            item['time'] = row.time
+            item['impression'] = {
+                x.split('-')[0][1:]: int(x.split('-')[1])
+                for x in row.impression.split()
+            }
+            f.write(json.dumps(item) + '\n')
+
+            pbar.update(1)
+
+    f.close()
+
+
 if __name__ == '__main__':
-    base_dir = './data/merged'
+    train_dir = './data/train'
+    test_dir = './data/test'
+
+    print('Process data for training')
 
     print('Clean up data')
-    clean(path.join(base_dir, 'behaviors.tsv'),
-          path.join(base_dir, 'behaviors_cleaned.tsv'),
-          path.join(base_dir, 'news.tsv'),
-          path.join(base_dir, 'news_cleaned.tsv'))
+    clean_dataset(path.join(train_dir, 'behaviors.tsv'),
+                  path.join(train_dir, 'behaviors_cleaned.tsv'),
+                  path.join(train_dir, 'news.tsv'),
+                  path.join(train_dir, 'news_cleaned.tsv'))
 
-    print('\nBalance data')
-    balance(path.join(base_dir, 'behaviors_cleaned.tsv'),
-            path.join(base_dir, 'behaviors_cleaned_balanced.tsv'), (1 / 2, 2))
+    print('Balance data')
+    balance(path.join(train_dir, 'behaviors_cleaned.tsv'),
+            path.join(train_dir, 'behaviors_cleaned_balanced.tsv'), (1 / 2, 2))
 
-    print('\nParse news')
-    parse_news(path.join(base_dir, 'news_cleaned.tsv'),
-               path.join(base_dir, 'news_with_entity.tsv'),
-               path.join(base_dir, 'word2int.tsv'),
-               path.join(base_dir, 'entity2int.tsv'))
+    print('Parse news')
+    parse_news(path.join(train_dir, 'news_cleaned.tsv'),
+               path.join(train_dir, 'news_with_entity.tsv'),
+               path.join(train_dir, 'word2int.tsv'),
+               path.join(train_dir, 'entity2int.tsv'),
+               mode='train')
 
-    print('\nTransform entity embeddings')
-    transform_entity_embedding(path.join(base_dir, 'entity_embedding.vec'),
-                               path.join(base_dir, 'entity_embedding.npy'),
-                               path.join(base_dir, 'entity2int.tsv'))
+    print('Transform entity embeddings')
+    transform_entity_embedding(path.join(train_dir, 'entity_embedding.vec'),
+                               path.join(train_dir, 'entity_embedding.npy'),
+                               path.join(train_dir, 'entity2int.tsv'))
+
+    print('\nProcess data for evaluation')
+
+    print('Transform test data')
+    transform2json(path.join(test_dir, 'behaviors.tsv'),
+                   path.join(test_dir, 'truth.json'))
+
+    print('Clean up data')
+    clean_dataset(path.join(test_dir, 'behaviors.tsv'),
+                  path.join(test_dir, 'behaviors_cleaned.tsv'),
+                  path.join(test_dir, 'news.tsv'),
+                  path.join(test_dir, 'news_cleaned.tsv'))
+
+    print('Parse news')
+    parse_news(path.join(test_dir, 'news_cleaned.tsv'),
+               path.join(test_dir, 'news_with_entity.tsv'),
+               path.join(train_dir, 'word2int.tsv'),
+               path.join(train_dir, 'entity2int.tsv'),
+               mode='test')

@@ -20,6 +20,7 @@ class DKNDataset(Dataset):
         """
         super(Dataset, self).__init__()
         self.behaviors = pd.read_table(behaviors_path)
+        self.behaviors.clicked_news.fillna('', inplace=True)
         self.news_with_entity = pd.read_table(news_with_entity_path,
                                               index_col='id',
                                               converters={
@@ -57,7 +58,6 @@ class DKNDataset(Dataset):
                 "word": [0] * Config.num_words_a_news,
                 "entity": [0] * Config.num_words_a_news
             }
-            # TODO the else part is unexpected and is due to error in dataset format
 
         item = {}
         row = self.behaviors.iloc[idx]

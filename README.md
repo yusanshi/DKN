@@ -1,3 +1,7 @@
+***Integrated into <https://github.com/yusanshi/NewsRecommendation>. This repository is currently read-only.***
+
+---
+
 # DKN
 
 An implementation of [DKN](https://dl.acm.org/doi/abs/10.1145/3178876.3186175) (_Deep Knowledge-Aware Network for News Recommendation_) in PyTorch.

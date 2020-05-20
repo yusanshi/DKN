@@ -34,6 +34,9 @@ def inference():
 
     y_pred = []
     y = []
+
+    count = 0
+
     with tqdm(total=len(dataloader), desc="Inferering") as pbar:
         for minibatch in dataloader:
             y_pred.extend(
@@ -41,6 +44,10 @@ def inference():
                     minibatch["clicked_news"]).tolist())
             y.extend(minibatch["clicked"].float().tolist())
             pbar.update(1)
+
+            count += 1
+            if count == 500:
+                break
 
     y_pred = iter(y_pred)
     y = iter(y)
